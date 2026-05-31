@@ -5,6 +5,9 @@ import argparse
 NOME_INICIO = b"[<!>"
 HEADER_FIM = b"<!>]"
 COMPRESSOES_INICIO = b"[<#>"
+MODO_INICIO = b"[<m>"
+MODO_ZLIB = "zlib"
+MODO_STORE = "store"
 
 
 def _parse_ppl_headers(dados):
@@ -30,7 +33,18 @@ def _parse_ppl_headers(dados):
                 inicio_compressoes + len(COMPRESSOES_INICIO):fim_compressoes
             ].decode()
         )
-        conteudo = dados[fim_compressoes + len(HEADER_FIM):]
+        inicio_modo = fim_compressoes + len(HEADER_FIM)
+        if dados.startswith(MODO_INICIO, inicio_modo):
+            fim_modo = dados.find(
+                HEADER_FIM,
+                inicio_modo + len(MODO_INICIO),
+            )
+            if fim_modo == -1:
+                return None
+            conteudo = dados[fim_modo + len(HEADER_FIM):]
+        else:
+            conteudo = dados[inicio_modo:]
+
         return nome, compressoes, conteudo
 
     nome = dados[len(NOME_INICIO):fim_nome].decode()
@@ -38,13 +52,16 @@ def _parse_ppl_headers(dados):
     return nome, 1, conteudo
 
 
-def _empacotar(nome, compressoes, conteudo):
+def _empacotar(nome, compressoes, modo, conteudo):
     return (
         NOME_INICIO
         + nome.encode()
         + HEADER_FIM
         + COMPRESSOES_INICIO
         + str(compressoes).encode()
+        + HEADER_FIM
+        + MODO_INICIO
+        + modo.encode()
         + HEADER_FIM
         + conteudo
     )
@@ -63,11 +80,16 @@ def compress(caminho):
         nome = caminho.name
         compressoes = 1
 
-    # Compressao
     dados_comprimidos = zlib.compress(dados)
+    if len(dados_comprimidos) < len(dados):
+        modo = MODO_ZLIB
+        conteudo = dados_comprimidos
+    else:
+        modo = MODO_STORE
+        conteudo = dados
 
     # Pacote final
-    pacote = _empacotar(nome, compressoes, dados_comprimidos)
+    pacote = _empacotar(nome, compressoes, modo, conteudo)
 
     return pacote
 

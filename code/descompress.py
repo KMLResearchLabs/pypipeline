@@ -5,6 +5,9 @@ from pathlib import Path
 NOME_INICIO = b"[<!>"
 HEADER_FIM = b"<!>]"
 COMPRESSOES_INICIO = b"[<#>"
+MODO_INICIO = b"[<m>"
+MODO_ZLIB = "zlib"
+MODO_STORE = "store"
 
 
 def _parse_ppl(dados):
@@ -32,26 +35,46 @@ def _parse_ppl(dados):
                 inicio_compressoes + len(COMPRESSOES_INICIO):fim_compressoes
             ].decode()
         )
-        conteudo_comprimido = dados[fim_compressoes + len(HEADER_FIM):]
+        inicio_modo = fim_compressoes + len(HEADER_FIM)
+        if dados.startswith(MODO_INICIO, inicio_modo):
+            fim_modo = dados.find(
+                HEADER_FIM,
+                inicio_modo + len(MODO_INICIO),
+            )
+            if fim_modo == -1:
+                raise ValueError(
+                    "Arquivo .ppl invalido: marcador de modo nao encontrado."
+                )
+            modo = dados[inicio_modo + len(MODO_INICIO):fim_modo].decode()
+            conteudo = dados[fim_modo + len(HEADER_FIM):]
+        else:
+            modo = MODO_ZLIB
+            conteudo = dados[inicio_modo:]
     else:
         compressoes = 1
-        conteudo_comprimido = dados[fim_nome + len(HEADER_FIM):]
+        modo = MODO_ZLIB
+        conteudo = dados[fim_nome + len(HEADER_FIM):]
 
     if compressoes < 1:
         raise ValueError("Arquivo .ppl invalido: quantidade de compressoes invalida.")
 
-    return nome, compressoes, conteudo_comprimido
+    if modo not in (MODO_ZLIB, MODO_STORE):
+        raise ValueError("Arquivo .ppl invalido: modo de armazenamento invalido.")
+
+    return nome, compressoes, modo, conteudo
 
 
 def descompress(dados):
-    nome, compressoes, _ = _parse_ppl(dados)
+    nome, compressoes, _, _ = _parse_ppl(dados)
     conteudo = dados
 
     for camada in range(compressoes):
-        nome, _, conteudo_comprimido = _parse_ppl(conteudo)
+        nome, _, modo, conteudo_payload = _parse_ppl(conteudo)
 
-        # Descompressao
-        conteudo = zlib.decompress(conteudo_comprimido)
+        if modo == MODO_ZLIB:
+            conteudo = zlib.decompress(conteudo_payload)
+        else:
+            conteudo = conteudo_payload
 
         if camada < compressoes - 1:
             try:
