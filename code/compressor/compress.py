@@ -67,7 +67,7 @@ def _empacotar(nome, compressoes, modo, conteudo):
     )
 
 
-def compress(caminho):
+def compress(caminho, original_name=None):
     caminho = Path(caminho)
     with open(caminho, "rb") as f:
         dados = f.read()
@@ -77,7 +77,7 @@ def compress(caminho):
         nome, compressoes, _ = headers
         compressoes += 1
     else:
-        nome = caminho.name
+        nome = original_name or caminho.name
         compressoes = 1
 
     dados_comprimidos = zlib.compress(dados)
@@ -94,7 +94,7 @@ def compress(caminho):
     return pacote
 
 
-def compress_file(caminho, saida=None):
+def compress_file(caminho, saida=None, original_name=None):
     caminho = Path(caminho)
     if saida:
         saida = Path(saida)
@@ -107,7 +107,7 @@ def compress_file(caminho, saida=None):
         raise ValueError("A saida nao pode ser o mesmo arquivo da entrada.")
 
     with open(saida, "wb") as f:
-        f.write(compress(caminho))
+        f.write(compress(caminho, original_name=original_name))
 
     return saida
 
