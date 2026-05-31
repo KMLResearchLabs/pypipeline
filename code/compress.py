@@ -1,6 +1,5 @@
 from pathlib import Path
 import zlib
-import base64
 import argparse
 
 NOME_INICIO = b"[<!>"
@@ -64,14 +63,11 @@ def compress(caminho):
         nome = caminho.name
         compressoes = 1
 
-    # Compressão
+    # Compressao
     dados_comprimidos = zlib.compress(dados)
 
-    # Base64 -> string legível
-    dados_base64 = base64.b64encode(dados_comprimidos)
-
     # Pacote final
-    pacote = _empacotar(nome, compressoes, dados_base64)
+    pacote = _empacotar(nome, compressoes, dados_comprimidos)
 
     return pacote
 

@@ -1,8 +1,7 @@
 # PyPipeLine
 
 PyPipeLine e um compactador simples de arquivos feito em Python. Ele transforma
-um arquivo comum em um pacote `.ppl` usando `zlib` para compressao e `base64`
-para armazenar o conteudo comprimido em um formato transportavel.
+um arquivo comum em um pacote `.ppl` usando `zlib` para compressao.
 
 O projeto tambem salva metadados no arquivo `.ppl`, como o nome original do
 arquivo e a quantidade de vezes que ele foi compactado.
@@ -83,7 +82,7 @@ Um arquivo `.ppl` gerado pelo projeto possui:
 
 - marcador com o nome original do arquivo;
 - marcador com a quantidade de compressoes;
-- conteudo compactado com `zlib` e convertido para `base64`.
+- conteudo compactado com `zlib`.
 
 Os marcadores usados internamente sao:
 

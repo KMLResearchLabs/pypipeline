@@ -1,5 +1,4 @@
 import zlib
-import base64
 import argparse
 from pathlib import Path
 
@@ -33,15 +32,15 @@ def _parse_ppl(dados):
                 inicio_compressoes + len(COMPRESSOES_INICIO):fim_compressoes
             ].decode()
         )
-        conteudo_base64 = dados[fim_compressoes + len(HEADER_FIM):]
+        conteudo_comprimido = dados[fim_compressoes + len(HEADER_FIM):]
     else:
         compressoes = 1
-        conteudo_base64 = dados[fim_nome + len(HEADER_FIM):]
+        conteudo_comprimido = dados[fim_nome + len(HEADER_FIM):]
 
     if compressoes < 1:
         raise ValueError("Arquivo .ppl invalido: quantidade de compressoes invalida.")
 
-    return nome, compressoes, conteudo_base64
+    return nome, compressoes, conteudo_comprimido
 
 
 def descompress(dados):
@@ -49,10 +48,7 @@ def descompress(dados):
     conteudo = dados
 
     for camada in range(compressoes):
-        nome, _, conteudo_base64 = _parse_ppl(conteudo)
-
-        # Base64 -> bytes comprimidos
-        conteudo_comprimido = base64.b64decode(conteudo_base64)
+        nome, _, conteudo_comprimido = _parse_ppl(conteudo)
 
         # Descompressao
         conteudo = zlib.decompress(conteudo_comprimido)
